@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag name to use for artifacts and release (e.g. v0.1.0)'
+        required: true
+        default: 'v0.0.0-manual'
 
 env:
   CMD: 'goxisbuilder -appdir ./ax_voicer -ignore ".git web build node_modules .github"'
@@ -20,7 +26,7 @@ jobs:
           - { name: "armv7hf", args: '-sdk "12.5.0" -ubunutu "24.04" -manifest "manifest.json" -tags "prod" -arch armv7hf -upx=false -files "html"' }
 
     env:
-      FILE_PREFIX: Voicer_${{ github.ref_name }}
+      FILE_PREFIX: Voicer_${{ inputs.tag || github.ref_name }}
 
     steps:
       - uses: actions/checkout@v4
@@ -79,16 +85,16 @@ jobs:
         run: ls -la downloads/**/*.eap
 
       - name: Bundle .eaps into single zip
-        run: zip -jr Voicer_${{ github.ref_name }}.zip downloads/
+        run: zip -jr Voicer_${{ inputs.tag || github.ref_name }}.zip downloads/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          name: ${{ inputs.tag || github.ref_name }}
           generate_release_notes: true
           files: |
             downloads/**/*.eap
-            Voicer_${{ github.ref_name }}.zip
+            Voicer_${{ inputs.tag || github.ref_name }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
