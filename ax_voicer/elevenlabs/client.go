@@ -13,9 +13,6 @@ import (
 	"time"
 )
 
-// (bytes is used by parseAPIError below.)
-var _ = bytes.TrimSpace
-
 const DefaultBaseURL = "https://api.elevenlabs.io"
 
 type Client struct {

@@ -67,7 +67,7 @@ func (a *API) UpdateSettings(c *fiber.Ctx) error {
 	intoMap := map[string]json.RawMessage{}
 	_ = json.Unmarshal(mergeBytes, &intoMap)
 	for k, v := range body {
-		if (k == "api_key" || k == "playvoice_auth_key") && string(v) == `"********"` {
+		if k == "api_key" && string(v) == `"********"` {
 			continue
 		}
 		intoMap[k] = v
@@ -519,8 +519,12 @@ func (a *API) SynthDownload(c *fiber.Ctx) error {
 	if cur.APIKey == "" {
 		return errorJSON(c, 400, "api_key is not configured")
 	}
+	req.Text = strings.TrimSpace(req.Text)
 	if req.Text == "" {
 		return errorJSON(c, 400, "text is required")
+	}
+	if len(req.Text) > settings.MaxTextChars {
+		return errorJSON(c, 400, fmt.Sprintf("text exceeds %d chars", settings.MaxTextChars))
 	}
 	voiceID := firstNonEmpty(req.VoiceID, cur.VoiceID)
 	modelID := firstNonEmpty(req.ModelID, cur.ModelID)

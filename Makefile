@@ -6,7 +6,7 @@
 # and Vue UI can be iterated on Windows / Linux / macOS.
 
 IP ?= 10.0.0.48
-PWD ?= 1qay2wsx
+PWD ?= pass
 SDK ?= 12.5.0
 APPDIR := ./ax_voicer
 WEBDIR := ./web

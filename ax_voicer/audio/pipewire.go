@@ -44,7 +44,6 @@ func (p *pwPlayer) Info(_ context.Context) Info {
 	}
 	if n < 0 {
 		info.Error = C.GoString(&errbuf[0])
-		info.HelperBuilt = true // the lib is linked; the connect attempt failed
 		return info
 	}
 	for i := 0; i < int(n); i++ {
