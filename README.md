@@ -83,10 +83,6 @@ Content-Type: application/json
 }
 ```
 
-Access control is delegated to the camera's reverse proxy
-(`access: anonymous` in `manifest.json`); the app itself does not
-authenticate.
-
 `scripts/test_playvoice.py` is a stdlib-only Python smoke test:
 
 ```sh
