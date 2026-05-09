@@ -1,0 +1,32 @@
+{
+    "schemaVersion": "1.7.0",
+    "resources": {
+        "linux": {
+            "user": {
+                "groups": [
+                    "pipewire"
+                ]
+            }
+        }
+    },
+    "acapPackageConf": {
+        "setup": {
+            "appName": "voicer",
+            "embeddedSdkVersion": "3.5",
+            "friendlyName": "Voicer",
+            "runMode": "respawn",
+            "vendor": "Commend Österreich GmbH",
+            "version": "0.1.0"
+        },
+        "configuration": {
+            "settingPage": "index.html",
+            "reverseProxy": [
+                {
+                    "apiPath": "voicer",
+                    "target": "http://localhost:8889",
+                    "access": "anonymous"
+                }
+            ]
+        }
+    }
+}

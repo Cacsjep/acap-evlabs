@@ -23,3 +23,19 @@ go.work.sum
 
 # env file
 .env
+
+# Voicer build artifacts
+ax_voicer/html/
+ax_voicer/voicer
+ax_voicer/voicer_audio_helper
+ax_voicer/voicer_audio/voicer_audio
+ax_voicer/build/
+ax_voicer/settings.json
+ax_voicer/settings.local.json
+build/
+*.eap
+
+# Web
+web/node_modules/
+web/dist/
+web/.vite/
