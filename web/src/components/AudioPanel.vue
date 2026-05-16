@@ -20,17 +20,17 @@
         density="compact"
         hide-details
         :placeholder="outputOptions.length ? 'Pick a device' : 'No outputs detected yet'"
-        @update:model-value="(v) => emit('change', { audio_node: v || '' })"
+        @update:model-value="(v) => emit('commit', { audio_node: v || '' })"
       />
     </HintField>
 
     <HintField
       label="Volume"
       icon="mdi-volume-high"
-      :hint="`${Number(settings.volume || 1).toFixed(2)}x. Above 1 risks clipping.`"
+      :hint="volumeHint"
     >
       <v-slider
-        :model-value="settings.volume"
+        :model-value="Number(settings.volume ?? 1)"
         :min="0"
         :max="2"
         :step="0.05"
@@ -38,6 +38,7 @@
         density="compact"
         hide-details
         @update:model-value="(v) => emit('change', { volume: v })"
+        @end="(v) => emit('commit', { volume: v })"
       />
     </HintField>
 
@@ -135,7 +136,16 @@ const props = defineProps({
   info: { type: Object, default: () => ({}) },
   loading: Boolean,
 })
-const emit = defineEmits(['change', 'reload'])
+const emit = defineEmits(['change', 'commit', 'reload'])
+
+// Hint for the volume slider. Reads zero as "muted" so the user gets explicit
+// confirmation that pulling the slider all the way down actually silences
+// playback (the backend now respects 0 as a real value, not "missing").
+const volumeHint = computed(() => {
+  const v = Number(props.settings.volume ?? 1)
+  if (v === 0) return 'Muted (0.00x)'
+  return `${v.toFixed(2)}x. Above 1 risks clipping.`
+})
 
 const tone = reactive({ freq_hz: 440, duration_ms: 600, waveform: 'saw' })
 const toneLoading = ref(false)
@@ -172,7 +182,12 @@ async function playTone() {
   toneLoading.value = true
   toneResult.value = ''
   try {
-    const r = await ApiService.testTone({ ...tone })
+    const r = await ApiService.testTone({
+      ...tone,
+      // Send the current slider value so the tone test exercises the same
+      // volume path as speech, no save round-trip required.
+      volume: Number(props.settings.volume ?? 1),
+    })
     toneResult.value = `Played ${r.duration_ms} ms ${r.waveform} at ${r.freq_hz} Hz`
     toast.success('Tone played')
   } catch (e) {

@@ -324,7 +324,7 @@ int voicer_pw_play(const int16_t* samples,
     st.total_frames      = n_frames;
     st.channels          = channels;
     st.rate              = rate;
-    st.volume            = volume <= 0 ? 1.0f : volume;
+    st.volume            = volume < 0 ? 0.0f : volume;
     st.err_out           = err_out;
     st.err_size          = err_size;
 

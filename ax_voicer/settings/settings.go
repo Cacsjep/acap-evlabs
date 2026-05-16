@@ -93,9 +93,10 @@ func (s *Store) merge(into *Settings) {
 	if into.OutputFormat == "" {
 		into.OutputFormat = d.OutputFormat
 	}
-	if into.Volume == 0 {
-		into.Volume = d.Volume
-	}
+	// Volume is intentionally not backfilled: 0 is a legitimate "mute"
+	// value the user can save. Fresh installs start from Defaults()
+	// before load() is ever called, so a brand-new store still gets
+	// Volume=1.0.
 }
 
 func (s *Store) persistLocked() error {

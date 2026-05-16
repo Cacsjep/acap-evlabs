@@ -29,6 +29,7 @@
               :info="audio"
               :loading="loading.audio"
               @change="onChange"
+              @commit="onCommit"
               @reload="loadAudio"
             />
           </v-col>
@@ -162,6 +163,25 @@ async function saveSettings() {
 
 function onChange(patch) {
   Object.assign(local, patch)
+}
+
+// onCommit is for fields that should persist as soon as the user finishes
+// adjusting them (volume slider release, audio device dropdown change).
+// Avoids the "I moved the slider but nothing happened" trap where the user
+// forgets the top-bar Save button. Only the patched fields are sent, so any
+// in-progress dirty edits elsewhere stay dirty.
+async function onCommit(patch) {
+  Object.assign(local, patch)
+  try {
+    const saved = await ApiService.updateSettings(patch)
+    // Refresh `settings` (the saved baseline) but preserve any pending
+    // dirty edits the user has typed into other fields.
+    const pending = { ...local }
+    Object.keys(settings).forEach((k) => delete settings[k])
+    Object.assign(settings, saved)
+    Object.keys(local).forEach((k) => delete local[k])
+    Object.assign(local, JSON.parse(JSON.stringify(saved)), pending)
+  } catch {}
 }
 
 async function refreshAll() {

@@ -192,11 +192,17 @@ func (a *API) ListModels(c *fiber.Ctx) error {
 /* ---------- speaker test (sawtooth, no ElevenLabs) ---------- */
 
 type toneRequest struct {
-	DurationMs int     `json:"duration_ms"`
-	FreqHz     int     `json:"freq_hz"`
-	Volume     float64 `json:"volume"`
-	Waveform   string  `json:"waveform"` // "saw" (default) or "sine"
+	DurationMs int      `json:"duration_ms"`
+	FreqHz     int      `json:"freq_hz"`
+	Volume     *float64 `json:"volume"` // pointer so 0 means mute, not "missing"
+	Waveform   string   `json:"waveform"` // "saw" (default) or "sine"
 }
+
+// toneAmplitude is the fixed amplitude baked into the test tone PCM. The
+// saved (or request-overridden) volume is applied by the player on top of
+// this, so the tone test exercises the same volume path as speech. 0.5
+// keeps headroom even when the user has volume cranked above 1.0.
+const toneAmplitude = 0.5
 
 func (a *API) TestTone(c *fiber.Ctx) error {
 	var req toneRequest
@@ -210,19 +216,26 @@ func (a *API) TestTone(c *fiber.Ctx) error {
 	if req.FreqHz <= 0 {
 		req.FreqHz = 440
 	}
-	if req.Volume <= 0 || req.Volume > 1 {
-		req.Volume = 0.5
+	cur := a.Store.Get()
+	playerVolume := cur.Volume
+	if req.Volume != nil {
+		playerVolume = *req.Volume
+	}
+	if playerVolume < 0 {
+		playerVolume = 0
+	}
+	if playerVolume > 4 {
+		playerVolume = 4
 	}
 	const rate = 44100
-	pcm := generateTone(req.Waveform, req.DurationMs, req.FreqHz, rate, req.Volume)
+	pcm := generateTone(req.Waveform, req.DurationMs, req.FreqHz, rate, toneAmplitude)
 
-	cur := a.Store.Get()
 	ctx, cancel := context.WithTimeout(c.Context(), 15*time.Second)
 	defer cancel()
 	if err := a.Player.Play(ctx, audio.PlayParams{
 		Format:          fmt.Sprintf("pcm_s16le_%d_1", rate),
 		Data:            pcm,
-		Volume:          1.0, // amplitude already applied
+		Volume:          playerVolume,
 		NodeNamePattern: nodePattern(cur.AudioNode),
 	}); err != nil {
 		if a.Log != nil {
@@ -278,12 +291,12 @@ func generateTone(waveform string, durationMs, freqHz, rate int, amplitude float
 /* ---------- play / test ---------- */
 
 type playRequest struct {
-	Text         string  `json:"text"`
-	VoiceID      string  `json:"voice_id"`
-	ModelID      string  `json:"model_id"`
-	OutputFormat string  `json:"output_format"`
-	Volume       float64 `json:"volume"`
-	DryRun       bool    `json:"dry_run"`
+	Text         string   `json:"text"`
+	VoiceID      string   `json:"voice_id"`
+	ModelID      string   `json:"model_id"`
+	OutputFormat string   `json:"output_format"`
+	Volume       *float64 `json:"volume"` // pointer so 0 means mute, not "missing"
+	DryRun       bool     `json:"dry_run"`
 }
 
 func (a *API) Test(c *fiber.Ctx) error {
@@ -320,9 +333,15 @@ func (a *API) runPlay(c *fiber.Ctx, isTest bool) error {
 	modelID := firstNonEmpty(req.ModelID, cur.ModelID)
 	outFmt := firstNonEmpty(req.OutputFormat, cur.OutputFormat)
 
-	volume := req.Volume
-	if volume == 0 {
-		volume = cur.Volume
+	volume := cur.Volume
+	if req.Volume != nil {
+		volume = *req.Volume
+	}
+	if volume < 0 {
+		volume = 0
+	}
+	if volume > 4 {
+		volume = 4
 	}
 
 	cl := a.newClient(cur.APIKey)
