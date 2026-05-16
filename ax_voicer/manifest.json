@@ -16,7 +16,7 @@
             "friendlyName": "Voicer",
             "runMode": "respawn",
             "vendor": "Commend Österreich GmbH",
-            "version": "0.1.1"
+            "version": "0.1.2"
         },
         "configuration": {
             "settingPage": "index.html",
